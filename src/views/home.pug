@@ -4,12 +4,18 @@ html(lang="en")
         meta(charset="UTF-8")
         meta(http-equiv="X-UA-Compatible", content="IE=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        title Noom
+        title Soom
         // 페이지가 덜 못생겨보이게
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
     body 
         header
-            h1 It works!
+            h1 Soom
         main
-            h2 Welcome to Soom
+            form#nick
+                input(type="text", placeholder="choose a nickname", required)
+                button Save
+            ul
+            form#message
+                input(type="text", placeholder="write a msg" requried)
+                button Send
         script(src="/public/js/app.js") 
