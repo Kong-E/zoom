@@ -11,11 +11,19 @@ html(lang="en")
         header
             h1 Soom
         main
-            form#nick
-                input(type="text", placeholder="choose a nickname", required)
-                button Save
-            ul
-            form#message
-                input(type="text", placeholder="write a msg" requried)
-                button Send
+            div#welcome
+                form#name
+                    input(placeholder="nickname", required, type="text")
+                    button Save
+                form#enter
+                    input(placeholder="room name", required, type="text")
+                    button Enter Room
+            div#room
+                h3
+                ul
+                form#msg
+                    input(placeholder="message", required, type="text")
+                    button Send
+        // ws API는 브라우저에 설치되어 있었지만 socket.io는 아니기 때문에 frontend에 socket.io 설치
+        script(src="/socket.io/socket.io.js") 
         script(src="/public/js/app.js") 
