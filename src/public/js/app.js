@@ -31,11 +31,11 @@ function handleMessageSubmit(event) {
 }
 
 //방 보여주는 호출 함수
-function showRoom() {
+function showRoom(count) {
   welcome.hidden = true;
   room.hidden = false;
   const h3 = room.querySelector("h3");
-  h3.innerText = `Room ${roomName}`;
+  h3.innerText = `Room ${roomName} (${count}명)`;
   const msgForm = room.querySelector("form#msg");
   msgForm.addEventListener("submit", handleMessageSubmit);
 }
@@ -69,3 +69,17 @@ socket.on("bye", addMessage);
 
 //상대에게 new_message를 받으면
 socket.on("new_message", addMessage);
+
+socket.on("room_change", (rooms) => {
+  const ul = welcome.querySelector("ul");
+  ul.innerHTML = "";
+  if (rooms.length === 0) {
+    return;
+  }
+  ul.innerHTML = "";
+  rooms.forEach((room) => {
+    const li = document.createElement("li");
+    li.innerText = room;
+    ul.append(li);
+  });
+});

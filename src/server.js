@@ -1,21 +1,13 @@
 import http from "http";
 import { Server } from "socket.io";
+import { instrument } from "@socket.io/admin-ui";
 // import WebSocket, { WebSocketServer } from "ws";
-import livereloadMiddleware from "connect-livereload";
-import livereload from "livereload";
+
 import express from "express";
 import path from "path";
 const __dirname = path.resolve();
-const liveServer = livereload.createServer({
-  exts: ["js", "pug", "css"],
-  delay: 1000,
-});
-
-liveServer.watch(__dirname);
 
 const app = express();
-
-app.use(livereloadMiddleware());
 
 app.set("view engine", "pug");
 app.set("views", __dirname + "/src/views");
@@ -25,9 +17,35 @@ app.get("/", (req, res) => res.render("home"));
 app.get("/*", (req, res) => res.redirect("/"));
 
 const httpServer = http.createServer(app);
-const wsServer = new Server(httpServer); //backend에 socket.io 설치
+const wsServer = new Server(httpServer, {
+  cors: {
+    origin: ["https://admin.socket.io"],
+    credentials: true,
+  },
+});
+
+instrument(wsServer, {
+  auth: false,
+  mode: "development",
+});
+
+function publicRooms() {
+  const { rooms, sids } = wsServer.sockets.adapter;
+  const publicRooms = [];
+  rooms.forEach((_, key) => {
+    if (sids.get(key) === undefined) {
+      publicRooms.push(key);
+    }
+  });
+  return publicRooms;
+}
+
+function countRoom(roomName) {
+  return wsServer.sockets.adapter.rooms.get(roomName)?.size;
+}
 
 wsServer.on("connection", (socket) => {
+  wsServer.sockets.emit("room_change", publicRooms());
   socket["nickname"] = "Anon";
   socket.onAny((event) => {
     console.log(`Socket Event: ${event}`);
@@ -36,13 +54,17 @@ wsServer.on("connection", (socket) => {
     socket.join(roomName); //방에 들어감
     //    console.log(socket.rooms);
     //{ socket.id(유저와 서버 사이의 프라이빗 방)), roomName(새로만든방) }
-    done();
+    done(countRoom(roomName));
     socket.to(roomName).emit("welcome", `Welcome ${socket.nickname}!`);
+    wsServer.sockets.emit("room_change", publicRooms());
   });
   socket.on("disconnecting", () => {
     socket.rooms.forEach((room) =>
       socket.to(room).emit("bye", `${socket.nickname} left 🥹`)
     );
+  });
+  socket.on("disconnect", () => {
+    wsServer.sockets.emit("room_change", publicRooms());
   });
   //new_message를 받으면
   socket.on("new_message", (msg, room, done) => {
