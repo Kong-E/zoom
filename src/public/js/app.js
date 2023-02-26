@@ -1,6 +1,7 @@
 // 서버와 연결
 const socket = io();
 
+const h1 = document.querySelector("h1");
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
@@ -11,6 +12,7 @@ let muted = false;
 let cameraOff = false;
 let roomName;
 let myPeerConnection;
+let myDataChannel;
 
 //현재 카메라 장치 불러오기
 async function getCameras() {
@@ -98,6 +100,7 @@ async function handleCameraChange() {
   }
 }
 
+h1.addEventListener("click", () => location.reload());
 muteBtn.addEventListener("click", handleMuteClick);
 cameraBtn.addEventListener("click", handleCameraClick);
 camerasSelect.addEventListener("input", handleCameraChange);
@@ -106,15 +109,26 @@ camerasSelect.addEventListener("input", handleCameraChange);
 
 const welcome = document.getElementById("welcome");
 const call = document.getElementById("call");
+const children = call.children;
+const peerFace = document.querySelector("#peerFace");
+const msgForm = document.getElementById("msgForm");
+const msg = document.getElementById("msg");
+const ul = document.querySelector("ul");
 
 call.hidden = true;
+for (let i = 0; i < children.length; i++) {
+  children[i].classList.add("hidden");
+}
 
-welcomeForm = welcome.querySelector("form");
+const welcomeForm = welcome.querySelector("form");
 
 //양쪽이 똑같이 실행하는 코드
 async function initCall() {
   welcome.hidden = true;
   call.hidden = false;
+  for (let i = 0; i < children.length; i++) {
+    children[i].classList.remove("hidden");
+  }
   await getMedia();
   makeConnection();
 }
@@ -131,8 +145,28 @@ async function handleWelcomeSubmit(event) {
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 // Socket Code
+
+function sendMsg(event) {
+  event.preventDefault();
+  if (myDataChannel) myDataChannel.send(msg.value);
+  const li = document.createElement("li");
+  li.innerText = `나: ${msg.value}`;
+  ul.appendChild(li);
+  msg.value = "";
+}
+
+function receiveMsg(event) {
+  const li = document.createElement("li");
+  li.innerText = `상대: ${event.data}`;
+  ul.appendChild(li);
+}
+
 // Peer A
 socket.on("welcome", async () => {
+  myDataChannel = myPeerConnection.createDataChannel("chat");
+  msgForm.addEventListener("submit", sendMsg);
+  myDataChannel.addEventListener("message", receiveMsg);
+  console.log("made data channel");
   const offer = await myPeerConnection.createOffer();
   myPeerConnection.setLocalDescription(offer);
   console.log("sent the offer");
@@ -141,6 +175,11 @@ socket.on("welcome", async () => {
 // offer를 주고 받기위해서는 서버가 필요함
 // Peer B
 socket.on("offer", async (offer) => {
+  myPeerConnection.addEventListener("datachannel", (event) => {
+    myDataChannel = event.channel;
+    msgForm.addEventListener("submit", sendMsg);
+    myDataChannel.addEventListener("message", receiveMsg);
+  });
   console.log("received the offer");
   myPeerConnection.setRemoteDescription(offer);
   const answer = await myPeerConnection.createAnswer();
@@ -160,6 +199,8 @@ socket.on("ice", (ice) => {
 });
 
 // RTC Code
+let remoteStream = null;
+
 // 브라우저 사이의 peerConnection을 만들기
 function makeConnection() {
   myPeerConnection = new RTCPeerConnection({
@@ -177,6 +218,13 @@ function makeConnection() {
   });
   myPeerConnection.addEventListener("icecandidate", handleIce);
   myPeerConnection.addEventListener("track", handleTrack); //p2p로 오디오와 비디오를 전달해야함
+  myPeerConnection.oniceconnectionstatechange = function (event) {
+    if (myPeerConnection.iceConnectionState === "disconnected") {
+      remoteStream.getTracks().forEach((track) => track.stop());
+      peerFace.srcObject = null;
+      remoteStream = null;
+    }
+  };
   myStream
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, myStream));
@@ -189,6 +237,11 @@ function handleIce(data) {
 
 function handleTrack(data) {
   console.log("handle track");
-  const peerFace = document.querySelector("#peerFace");
-  peerFace.srcObject = data.streams[0];
+  remoteStream = data.streams[0];
+  peerFace.srcObject = remoteStream;
+  if (data.streams[0] === null) {
+    peerFace.srcObject = null;
+  }
 }
+
+msgForm.addEventListener("submit", sendMsg);

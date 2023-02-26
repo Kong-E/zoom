@@ -1,12 +1,47 @@
-main {
+.hidden {
+  display: none;
+}
+h1 {
+  cursor: pointer;
+}
+main,
+#call {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+input:focus {
+  outline: none;
+}
+video {
+  border: 1px solid rgb(236, 236, 236);
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.078);
+  border-radius: 10px;
+  margin: 5px;
+}
+#box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#box > * {
+  margin: 5px;
 }
 form {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.078);
+}
+#msgForm {
+  width: 100%;
+}
+select {
+  width: 250px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.078);
+}
+li {
+  list-style: none;
 }

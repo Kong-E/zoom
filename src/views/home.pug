@@ -18,10 +18,14 @@ html(lang="en")
                     button Enter room
             div#call
                 div#myStream
-                    video#myFace(autoplay,playsinline, width="400", height="400")
-                    button#mute Mute
-                    button#camera Turn Camera Off
-                    select#cameras
-                    video#peerFace(autoplay,playsinline, width="400", height="400")
+                    video#myFace(autoplay,playsinline, width="400", height="300")
+                    video#peerFace(autoplay,playsinline, width="400", height="300")
+                    div#box
+                        button#mute Mute
+                        button#camera Turn Camera Off
+                        select#cameras
+                form#msgForm
+                    input#msg(placeholder="Send a message", type="text")
+                ul
         script(src="/socket.io/socket.io.js") 
         script(src="/public/js/app.js") 
